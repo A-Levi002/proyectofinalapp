@@ -396,7 +396,7 @@ class _LoginScreenState extends State<LoginScreen>
             animation: _pulseAnim,
             builder: (_, child) => Transform.scale(
                 scale: _pulseAnim.value, child: child),
-            child: Icon(Icons.fingerprint, size: 52,
+            child: const Icon(Icons.fingerprint, size: 52,
                 color: NothingTheme.accentGreen),
           ),
           const SizedBox(height: 10),

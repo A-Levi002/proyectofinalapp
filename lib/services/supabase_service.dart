@@ -621,9 +621,16 @@ class SupabaseService {
     required String telefono,
     required String direccion,
     required String numeroLicencia,
+    required DateTime fechaNacimiento,
     required DateTime vigenciaLicencia,
     required String empresa,
     required int zonaId,
+    String? numeroBus,
+    String? placa,
+    String? fotoCIUrl,
+    String? fotoLicenciaUrl,
+    String? fotoPlacaUrl,
+    String? fotoCocheUrl,
   }) async {
     try {
       final existe = await _supabase
@@ -640,8 +647,8 @@ class SupabaseService {
         };
       }
 
-      // Insertar conductor — NO enviamos 'id', Supabase lo genera como UUID
-      final conductorInsert = await _supabase.from('conductores').insert({
+      // Construir el map de inserción
+      final insertData = <String, dynamic>{
         'ci':               ci,
         'nombre':           nombre,
         'apellido':         apellido,
@@ -649,26 +656,49 @@ class SupabaseService {
         'telefono':         telefono,
         'direccion':        direccion,
         'numero_licencia':  numeroLicencia,
+        'fecha_nacimiento': fechaNacimiento.toIso8601String().split('T')[0],
         'vigencia_licencia': vigenciaLicencia.toIso8601String().split('T')[0],
         'empresa':          empresa,
         'zona_id':          zonaId,
         'estado':           'inactivo',
         'pin_hash':         '1234',
         'contrato_aceptado': false,
-        'fecha_nacimiento': '1990-01-01', // placeholder, se actualiza en perfil
         'categoria_licencia': 'P',
-      }).select('id').single();
+      };
+
+      // Campos opcionales
+      if (numeroBus != null && numeroBus.isNotEmpty) {
+        insertData['numero_bus'] = numeroBus;
+      }
+      // Guardamos placa en numero_bus si no hay campo placa en la tabla
+      // (foto_carnet se usa para almacenar la URL del CI)
+      if (fotoCIUrl != null) insertData['foto_carnet'] = fotoCIUrl;
+      // URLs de licencia, placa y coche se guardan en observaciones del contrato
+
+      final conductorInsert = await _supabase
+          .from('conductores')
+          .insert(insertData)
+          .select('id')
+          .single();
 
       final conductorUUID = conductorInsert['id'] as String;
 
+      // Armar observaciones con URLs de documentos adicionales
+      final docsInfo = <String>[];
+      if (fotoLicenciaUrl != null) docsInfo.add('licencia:$fotoLicenciaUrl');
+      if (fotoPlacaUrl   != null) docsInfo.add('placa:$fotoPlacaUrl');
+      if (fotoCocheUrl   != null) docsInfo.add('coche:$fotoCocheUrl');
+      if (placa          != null && placa.isNotEmpty) docsInfo.add('placa_texto:$placa');
+
       await _supabase.from('contratos_conductores').insert({
-        'conductor_id':        conductorUUID,
-        'empresa':             empresa,
-        'zona_id':             zonaId,
-        'fecha_inicio':        DateTime.now().toIso8601String().split('T')[0],
-        'documento_contrato':  'pendiente',
+        'conductor_id':         conductorUUID,
+        'empresa':              empresa,
+        'zona_id':              zonaId,
+        'fecha_inicio':         DateTime.now().toIso8601String().split('T')[0],
+        'documento_contrato':   'pendiente',
         'terminos_condiciones': 'Términos y condiciones estándar de TransitApp.',
-        'estado':              'pendiente',
+        'estado':               'pendiente',
+        'rutas_permitidas':     docsInfo.isNotEmpty ? docsInfo.join('|') : null,
       });
 
       return {
@@ -1124,6 +1154,69 @@ class SupabaseService {
         'exito': false,
         'mensaje': 'Error en sincronización: $e',
       };
+    }
+  }
+
+  // ============ ACTUALIZAR UBICACIÓN CONDUCTOR (fallback sin RPC) ============
+  Future<void> actualizarUbicacionConductor({
+    required String conductorId,
+    required double latitud,
+    required double longitud,
+    double velocidad = 0,
+    double rumbo = 0,
+    double? precision,
+    bool enServicio = true,
+  }) async {
+    try {
+      // Intenta via RPC primero, si falla usa upsert directo
+      await _supabase.rpc('actualizar_ubicacion_conductor', params: {
+        'p_conductor_id': conductorId,
+        'p_latitud':      latitud,
+        'p_longitud':     longitud,
+        'p_velocidad':    velocidad,
+        'p_rumbo':        rumbo,
+        'p_precision':    precision,
+        'p_en_servicio':  enServicio,
+      });
+    } catch (_) {
+      // Fallback: upsert directo en la tabla
+      try {
+        await _supabase.from('conductor_ubicaciones').upsert({
+          'conductor_id':     conductorId,
+          'latitud':          latitud,
+          'longitud':         longitud,
+          'velocidad':        velocidad,
+          'rumbo':            rumbo,
+          'precision_metros': precision,
+          'en_servicio':      enServicio,
+          'updated_at':       DateTime.now().toIso8601String(),
+        }, onConflict: 'conductor_id');
+      } catch (e) {
+        print('Error actualizando ubicación: $e');
+      }
+    }
+  }
+
+  // ============ DESCONTAR SALDO USUARIO (fallback sin RPC) ============
+  Future<void> descontarSaldoUsuario({
+    required String ci,
+    required double monto,
+  }) async {
+    try {
+      await _supabase.rpc('descontar_saldo_usuario', params: {
+        'p_ci': ci, 'p_monto': monto,
+      });
+    } catch (_) {
+      // Fallback manual
+      try {
+        final u = await _supabase.from('usuarios')
+            .select('saldo').eq('ci', ci).single();
+        final actual = double.tryParse(u['saldo'].toString()) ?? 0.0;
+        await _supabase.from('usuarios')
+            .update({'saldo': actual - monto}).eq('ci', ci);
+      } catch (e) {
+        print('Error descontando saldo: $e');
+      }
     }
   }
 }

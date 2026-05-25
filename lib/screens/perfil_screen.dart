@@ -73,7 +73,8 @@ class _PerfilScreenState extends State<PerfilScreen>
         setState(() => _usuario = local);
         if (local?.fotoPerfil != null) await _extraerColorDominante(local!.fotoPerfil);
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error cargarPerfil: $e');
       setState(() => _usuario = _storageService.obtenerUsuario());
     } finally {
       if (mounted) {
@@ -307,20 +308,31 @@ class _PerfilScreenState extends State<PerfilScreen>
 
     if (_cargando) {
       return Scaffold(backgroundColor: bg,
-          appBar: NothingAppBar(title: 'MI PERFIL'),
+          appBar: const NothingAppBar(title: 'MI PERFIL'),
           body: const Center(child: CircularProgressIndicator()));
     }
 
     if (_usuario == null) {
       return Scaffold(backgroundColor: bg,
-          appBar: NothingAppBar(title: 'MI PERFIL'),
+          appBar: const NothingAppBar(title: 'MI PERFIL'),
           body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.error_outline, size: 48, color: NothingTheme.error),
+            const Icon(Icons.error_outline, size: 48, color: NothingTheme.error),
             const SizedBox(height: 12),
+            Text('Sin conexión o sesión expirada',
+                style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: sec)),
+            const SizedBox(height: 8),
             GestureDetector(onTap: _cargarPerfil,
-                child: Text('REINTENTAR', style: TextStyle(
-                    fontFamily: 'monospace', fontSize: 11,
-                    color: prim))),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: NothingTheme.accentOrange, width: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('REINTENTAR', style: TextStyle(
+                      fontFamily: 'monospace', fontSize: 11,
+                      fontWeight: FontWeight.w700, letterSpacing: 2,
+                      color: prim)),
+                )),
           ])));
     }
 
@@ -549,7 +561,7 @@ class _PerfilScreenState extends State<PerfilScreen>
                   ],
                 ),
                 child: ClipOval(child: _subiendoFoto
-                    ? Center(child: CircularProgressIndicator(
+                    ? const Center(child: CircularProgressIndicator(
                         color: NothingTheme.accentPurple, strokeWidth: 2))
                     : _usuario!.fotoPerfil != null
                         ? Image.network(_usuario!.fotoPerfil!,
@@ -584,7 +596,7 @@ class _PerfilScreenState extends State<PerfilScreen>
                   fontFamily: 'monospace', fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: onHeader,
-                  shadows: [Shadow(color: Colors.black26, blurRadius: 8)])),
+                  shadows: const [Shadow(color: Colors.black26, blurRadius: 8)])),
 
           const SizedBox(height: 8),
 

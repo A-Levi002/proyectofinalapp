@@ -90,7 +90,7 @@ class ConductorModel {
       direccion: json['direccion'] ?? '',
       numeroLicencia: json['numero_licencia'] ?? '',
       categoriaLicencia: json['categoria_licencia'],
-      vigenciaLicencia: DateTime.parse(json['vigencia_licencia'] ?? DateTime.now().add(Duration(days: 365)).toIso8601String()),
+      vigenciaLicencia: DateTime.parse(json['vigencia_licencia'] ?? DateTime.now().add(const Duration(days: 365)).toIso8601String()),
       zonaId: json['zona_id'] ?? 1,
       numeroBus: json['numero_bus'],
       empresa: json['empresa'],

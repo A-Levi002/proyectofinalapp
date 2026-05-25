@@ -153,7 +153,7 @@ class _RecargaScreenState extends State<RecargaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: NothingTheme.background,
-      appBar: NothingAppBar(title: 'RECARGAR SALDO'),
+      appBar: const NothingAppBar(title: 'RECARGAR SALDO'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -183,7 +183,7 @@ class _RecargaScreenState extends State<RecargaScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('MÉTODO DE PAGO', style: NothingTheme.label),
+                        const Text('MÉTODO DE PAGO', style: NothingTheme.label),
                         const SizedBox(height: 4),
                         Text(
                           'Paga con PayPal de forma segura',
@@ -198,7 +198,7 @@ class _RecargaScreenState extends State<RecargaScreen> {
             const SizedBox(height: 24),
 
             // Seleccionar monto
-            Text('SELECCIONAR MONTO', style: NothingTheme.label),
+            const Text('SELECCIONAR MONTO', style: NothingTheme.label),
             const SizedBox(height: 12),
 
             // Botones de monto rápido
@@ -306,7 +306,7 @@ class _RecargaScreenState extends State<RecargaScreen> {
             const SizedBox(height: 24),
 
             // Resumen de recarga
-            Text('RESUMEN DE RECARGA', style: NothingTheme.label),
+            const Text('RESUMEN DE RECARGA', style: NothingTheme.label),
             const SizedBox(height: 12),
 
             NothingCard(
@@ -345,7 +345,7 @@ class _RecargaScreenState extends State<RecargaScreen> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(Icons.security, size: 18, color: NothingTheme.accentGreen),
+                  const Icon(Icons.security, size: 18, color: NothingTheme.accentGreen),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

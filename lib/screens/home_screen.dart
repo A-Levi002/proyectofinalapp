@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   UsuarioModel? _usuario;
   bool _cargando   = true;
   bool _mapaListo  = false;
-  bool _mapaError  = false;
+  final bool _mapaError  = false;
 
   GoogleMapController? _mapCtrl;
   static const LatLng _centro = LatLng(-17.3935, -66.1568);
@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       color: Colors.black.withOpacity(0.15), blurRadius: 8)],
                 ),
                 child: Row(children: [
-                  Icon(Icons.directions_bus_outlined, size: 16, color: NothingTheme.accentGreen),
+                  const Icon(Icons.directions_bus_outlined, size: 16, color: NothingTheme.accentGreen),
                   const SizedBox(width: 8),
                   Text('Ver trufis en tiempo real',
                       style: TextStyle(fontFamily: 'monospace',

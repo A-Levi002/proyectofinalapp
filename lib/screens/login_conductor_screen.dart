@@ -180,11 +180,11 @@ class _LoginConductorScreenState extends State<LoginConductorScreen> {
               const SizedBox(height: 24),
 
               // Separador
-              Row(
+              const Row(
                 children: [
                   Expanded(child: Divider(color: NothingTheme.divider)),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text('O', style: NothingTheme.body),
                   ),
                   Expanded(child: Divider(color: NothingTheme.divider)),
@@ -206,7 +206,7 @@ class _LoginConductorScreenState extends State<LoginConductorScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: NothingTheme.accentOrange, size: 18),
+                    const Icon(Icons.info_outline, color: NothingTheme.accentOrange, size: 18),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(

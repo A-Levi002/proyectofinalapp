@@ -274,14 +274,14 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     if (_cargando) {
       return Scaffold(
         backgroundColor: bg,
-        appBar: NothingAppBar(title: 'EDITAR PERFIL'),
+        appBar: const NothingAppBar(title: 'EDITAR PERFIL'),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: NothingAppBar(title: 'EDITAR PERFIL'),
+      appBar: const NothingAppBar(title: 'EDITAR PERFIL'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -301,7 +301,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: div, width: 1)),
                       child: ClipOval(child: _subiendoFoto
-                          ? Center(child: CircularProgressIndicator(
+                          ? const Center(child: CircularProgressIndicator(
                               color: NothingTheme.accentPurple))
                           : _usuario?.fotoPerfil != null
                               ? Image.network(
@@ -310,7 +310,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                                   loadingBuilder: (_, child, progress) =>
                                       progress == null
                                           ? child
-                                          : Center(child:
+                                          : const Center(child:
                                               CircularProgressIndicator(
                                                 color: NothingTheme.accentPurple)),
                                   errorBuilder: (_, __, ___) =>

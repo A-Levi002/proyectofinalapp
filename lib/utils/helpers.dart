@@ -8,7 +8,6 @@ class TarifasHelper {
     'general': 0.00, // 0%
   };
 
-  /// Calcular tarifa final según tipo de usuario y descuento
   static double calcularTarifa({
     required String tipoUsuario,
     double? tarifaBaseCustom,
@@ -19,7 +18,6 @@ class TarifasHelper {
     return tarifa - montoDescuento;
   }
 
-  /// Desglose de la tarifa
   static Map<String, dynamic> desgloseTarifa({
     required String tipoUsuario,
     double? tarifaBaseCustom,
@@ -39,18 +37,15 @@ class TarifasHelper {
     };
   }
 
-  /// Validar si hay saldo suficiente
   static bool tieneSaldoSuficiente({
     required double saldoActual,
     required String tipoUsuario,
   }) {
     final tarifaRequerida = calcularTarifa(tipoUsuario: tipoUsuario);
-    // Para usuarios con tarifa 0 (discapacidad), siempre hay saldo suficiente
     if (tarifaRequerida == 0.0) return true;
     return saldoActual >= tarifaRequerida;
   }
 
-  /// Obtener descripción del tipo de usuario
   static String obtenerDescripcion(String tipoUsuario) {
     switch (tipoUsuario.toLowerCase()) {
       case 'estudiante':
@@ -66,66 +61,61 @@ class TarifasHelper {
     }
   }
 
-  /// Validar si el tipo de usuario es válido
   static bool esValidoTipoUsuario(String tipo) {
     return descuentosPorTipo.containsKey(tipo.toLowerCase());
   }
 }
 
 class ValidatorsHelper {
-  /// Validar formato de email universitario
-  /// Acepta:
-  /// - Emails generados automáticamente: ...@univ.edu.bo
-  /// - Dominios universitarios específicos de Bolivia y Perú
+  /// Acepta dominios universitarios bolivianos reales
   static bool esEmailUniversitario(String email) {
     final emailLower = email.toLowerCase();
 
-    // Dominios generados automáticamente por nuestra app
-    if (emailLower.endsWith('@univ.edu.bo')) {
-      return true;
-    }
+    // Dominio generado automáticamente por la app
+    if (emailLower.endsWith('@univ.edu.bo')) return true;
 
-    // Lista de dominios universitarios conocidos
+    // Lista ampliada con UPDS y otras universidades bolivianas
     final dominiosValidos = [
       '@estudiante.univ.edu.bo',
-      '@umsa.bo',
-      '@upds.edu.bo',
-      '@ucb.edu.bo',
-      '@umsm.edu.pe',
-      '@uni.edu.pe',
-      '@univ.edu.bo', //Dominio genérico
+      '@upds.edu.bo',           // Universidad Privada Domingo Savio
+      '@est.upds.edu.bo',       // subdominio estudiantes UPDS
+      '@umsa.bo',               // UMSA
+      '@umss.edu.bo',           // UMSS Cochabamba
+      '@est.umss.edu.bo',
+      '@ucb.edu.bo',            // UCB
+      '@estudiante.ucb.edu.bo',
+      '@uab.edu.bo',            // UAB
+      '@ujms.edu.bo',           // UJMS
+      '@unifranz.edu.bo',       // UNIFRANZ
+      '@uagrm.edu.bo',          // UAGRM
+      '@udabol.edu.bo',         // UDABOL
+      '@uatf.edu.bo',           // UATF
+      '@univ.edu.bo',
     ];
 
     return dominiosValidos.any((dominio) => emailLower.endsWith(dominio));
   }
 
-  /// Verifica si un email es válido en formato general
   static bool esEmailValido(String email) {
     final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     return regex.hasMatch(email);
   }
 
-  /// Validar CI boliviano básico
   static bool esValidoCI(String ci) {
     final limpio = ci.replaceAll(RegExp(r'[^0-9]'), '');
-    // Un CI boliviano tiene entre 7 y 10 dígitos
     return limpio.length >= 7 && limpio.length <= 10;
   }
 
-  /// Validar PIN (4 dígitos)
   static bool esValidoPIN(String pin) {
     final limpio = pin.replaceAll(RegExp(r'[^0-9]'), '');
     return limpio.length == 4;
   }
 
-  /// Validar número de teléfono boliviano
   static bool esValidoTelefono(String telefono) {
     final limpio = telefono.replaceAll(RegExp(r'[^0-9]'), '');
-    // Bolivia: típicamente 8 dígitos
     return limpio.length == 8 || limpio.length == 10 || limpio.length == 12;
   }
 
-  /// Validar edad mínima
   static bool tieneEdadMinima(DateTime fechaNacimiento, int edadMinima) {
     final hoy = DateTime.now();
     int edad = hoy.year - fechaNacimiento.year;
@@ -136,7 +126,6 @@ class ValidatorsHelper {
     return edad >= edadMinima;
   }
 
-  /// Validar nombre (sin números, sin caracteres especiales)
   static bool esValidoNombre(String nombre) {
     return nombre.isNotEmpty &&
         nombre.length >= 2 &&
@@ -145,29 +134,25 @@ class ValidatorsHelper {
 }
 
 class FormateoHelper {
-  /// Formatear CI para mostrar (ej: "1234567CP")
-  static String formatearCI(String ci) {
-    return ci.toUpperCase();
-  }
+  static String formatearCI(String ci) => ci.toUpperCase();
 
-  /// Formatear moneda boliviana
-  static String formatearMoneda(double monto) {
-    return 'Bs. ${monto.toStringAsFixed(2)}';
-  }
+  static String formatearMoneda(double monto) =>
+      'Bs. ${monto.toStringAsFixed(2)}';
 
-  /// Formatear fecha (ej: "13/05/2026")
   static String formatearFecha(DateTime? fecha) {
     if (fecha == null) return 'No registrada';
-    return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+    return '${fecha.day.toString().padLeft(2, '0')}/'
+        '${fecha.month.toString().padLeft(2, '0')}/'
+        '${fecha.year}';
   }
 
-  /// Formatear fecha y hora
   static String formatearFechaHora(DateTime? fecha) {
     if (fecha == null) return 'No registrada';
-    return '${formatearFecha(fecha)} ${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
+    return '${formatearFecha(fecha)} '
+        '${fecha.hour.toString().padLeft(2, '0')}:'
+        '${fecha.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Formatear teléfono (ej: "67123456" → "6712-3456")
   static String formatearTelefono(String telefono) {
     final limpio = telefono.replaceAll(RegExp(r'[^0-9]'), '');
     if (limpio.length == 8) {

@@ -108,13 +108,13 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
         backgroundColor: NothingTheme.cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: NothingTheme.success, width: 1),
+          side: const BorderSide(color: NothingTheme.success, width: 1),
         ),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.check_circle, color: NothingTheme.success, size: 28),
-            const SizedBox(width: 12),
-            const Text('VIAJE VALIDADO'),
+            SizedBox(width: 12),
+            Text('VIAJE VALIDADO'),
           ],
         ),
         content: Column(
@@ -154,13 +154,13 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
         backgroundColor: NothingTheme.cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: NothingTheme.error, width: 1),
+          side: const BorderSide(color: NothingTheme.error, width: 1),
         ),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.error_outline, color: NothingTheme.error, size: 28),
-            const SizedBox(width: 12),
-            const Text('VALIDACIÓN RECHAZADA'),
+            SizedBox(width: 12),
+            Text('VALIDACIÓN RECHAZADA'),
           ],
         ),
         content: Text(mensaje, style: NothingTheme.body),
@@ -196,14 +196,14 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
     if (!_tienePermiso) {
       return Scaffold(
         backgroundColor: NothingTheme.background,
-        appBar: NothingAppBar(title: 'VALIDADOR QR'),
+        appBar: const NothingAppBar(title: 'VALIDADOR QR'),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock_outline, size: 64, color: NothingTheme.error),
+              const Icon(Icons.lock_outline, size: 64, color: NothingTheme.error),
               const SizedBox(height: 16),
-              Text('NO TIENES PERMISOS DE VALIDADOR', style: NothingTheme.label),
+              const Text('NO TIENES PERMISOS DE VALIDADOR', style: NothingTheme.label),
               const SizedBox(height: 8),
               Text(
                 'Solo los conductores pueden validar viajes',
@@ -243,7 +243,7 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
           // Panel de estadísticas
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: NothingTheme.surface,
               border: Border(bottom: BorderSide(color: NothingTheme.divider, width: 0.5)),
             ),
@@ -360,9 +360,9 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt, size: 64, color: NothingTheme.secondary),
+                            const Icon(Icons.camera_alt, size: 64, color: NothingTheme.secondary),
                             const SizedBox(height: 16),
-                            Text('Error al acceder a la cámara', style: NothingTheme.body),
+                            const Text('Error al acceder a la cámara', style: NothingTheme.body),
                             const SizedBox(height: 16),
                             NothingButton(
                               label: 'REINTENTAR',
@@ -382,13 +382,13 @@ class _ValidadorScreenState extends State<ValidadorScreen> {
           // Instrucciones
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: NothingTheme.surface,
               border: Border(top: BorderSide(color: NothingTheme.divider, width: 0.5)),
             ),
             child: Row(
               children: [
-                Icon(Icons.qr_code_scanner, size: 20, color: NothingTheme.accentBlue),
+                const Icon(Icons.qr_code_scanner, size: 20, color: NothingTheme.accentBlue),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

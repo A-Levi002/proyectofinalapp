@@ -58,7 +58,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
 
     if (resultado['exito'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('✓ Contrato aprobado'),
           backgroundColor: NothingTheme.success,
         ),
@@ -87,7 +87,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Ingresa la razón del rechazo:',
               style: NothingTheme.body,
             ),
@@ -103,7 +103,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: NothingTheme.body),
+            child: const Text('Cancelar', style: NothingTheme.body),
           ),
           NothingButton(
             label: 'RECHAZAR',
@@ -111,7 +111,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
               Navigator.pop(context);
               if (razonController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('Ingresa una razón'),
                     backgroundColor: NothingTheme.error,
                   ),
@@ -128,7 +128,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
 
               if (resultado['exito'] == true) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('✓ Contrato rechazado'),
                     backgroundColor: NothingTheme.warning,
                   ),
@@ -172,9 +172,9 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inbox, size: 64, color: NothingTheme.secondary),
+                      const Icon(Icons.inbox, size: 64, color: NothingTheme.secondary),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'SIN CONTRATOS PENDIENTES',
                         style: NothingTheme.label,
                       ),
@@ -207,11 +207,11 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
                           collapsedBackgroundColor: NothingTheme.cardColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: NothingTheme.divider, width: 0.5),
+                            side: const BorderSide(color: NothingTheme.divider, width: 0.5),
                           ),
                           collapsedShape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: NothingTheme.divider, width: 0.5),
+                            side: const BorderSide(color: NothingTheme.divider, width: 0.5),
                           ),
                           title: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,14 +231,14 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Row(
                               children: [
-                                Icon(Icons.business, size: 14, color: NothingTheme.secondary),
+                                const Icon(Icons.business, size: 14, color: NothingTheme.secondary),
                                 const SizedBox(width: 4),
                                 Text(
                                   contrato['empresa'] ?? 'Sin empresa',
                                   style: NothingTheme.body.copyWith(fontSize: 11),
                                 ),
                                 const SizedBox(width: 16),
-                                Icon(Icons.calendar_today, size: 14, color: NothingTheme.secondary),
+                                const Icon(Icons.calendar_today, size: 14, color: NothingTheme.secondary),
                                 const SizedBox(width: 4),
                                 Text(
                                   DateFormat('dd/MM/yyyy').format(fecha),
@@ -284,7 +284,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('TÉRMINOS DEL CONTRATO', style: NothingTheme.label),
+                                        const Text('TÉRMINOS DEL CONTRATO', style: NothingTheme.label),
                                         const SizedBox(height: 8),
                                         Text(
                                           contrato['terminos_condiciones'] ?? 'Sin especificar',
@@ -305,7 +305,7 @@ class _PanelAdminContratosScreenState extends State<PanelAdminContratosScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('DETALLES DEL CONTRATO', style: NothingTheme.label),
+                                        const Text('DETALLES DEL CONTRATO', style: NothingTheme.label),
                                         const SizedBox(height: 8),
                                         _buildInfoRow('Comisión', '${contrato['comision_porcentaje'] ?? 10}%', Icons.percent),
                                         const SizedBox(height: 8),

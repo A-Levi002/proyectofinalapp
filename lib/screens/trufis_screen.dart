@@ -234,8 +234,9 @@ class _TrufisScreenState extends State<TrufisScreen> {
     if (max == min) return 0;
     final d = max - min;
     double h;
-    if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
-    else if (max == g) h = (b - r) / d + 2;
+    if (max == r) {
+      h = (g - b) / d + (g < b ? 6 : 0);
+    } else if (max == g) h = (b - r) / d + 2;
     else h = (r - g) / d + 4;
     return (h / 6 * 360).clamp(0, 360);
   }
@@ -329,7 +330,7 @@ class _TrufisScreenState extends State<TrufisScreen> {
                           const Icon(Icons.directions_bus,
                               size: 16, color: NothingTheme.accentGreen),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'TRUFIS EN TIEMPO REAL',
                             style: NothingTheme.label,
                           ),
@@ -427,7 +428,7 @@ class _TrufisScreenState extends State<TrufisScreen> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: NothingTheme.divider, width: 0.5),
                   ),
-                  child: Text(
+                  child: const Text(
                     'No hay trufis activos cerca',
                     style: NothingTheme.body,
                   ),

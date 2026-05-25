@@ -93,7 +93,7 @@ class _AjustesScreenState extends State<AjustesScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: NothingAppBar(title:'AJUSTES'),
+      appBar: const NothingAppBar(title:'AJUSTES'),
       body: ListView(padding:const EdgeInsets.all(20),children:[
 
         // ── Apariencia ──
@@ -121,9 +121,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
             const SizedBox(width:12),
             _ColorDot(color:surf, label:'SUPERFICIE', border:div),
             const SizedBox(width:12),
-            _ColorDot(color:NothingTheme.accentGreen, label:'ACENTO'),
+            const _ColorDot(color:NothingTheme.accentGreen, label:'ACENTO'),
             const SizedBox(width:12),
-            _ColorDot(color:NothingTheme.accentPurple, label:'ESTUD.'),
+            const _ColorDot(color:NothingTheme.accentPurple, label:'ESTUD.'),
           ]),
           const SizedBox(height:12),
           _GlyphLines(isDark:dark),
@@ -307,7 +307,7 @@ class _SwitchRow extends StatelessWidget {
         ]),
       ]),
       Switch(value:value,onChanged:onChanged,
-        activeColor:NothingTheme.prim(isDark),
+        activeThumbColor:NothingTheme.prim(isDark),
         activeTrackColor:NothingTheme.prim(isDark).withOpacity(0.3),
         inactiveThumbColor:NothingTheme.sec(isDark),
         inactiveTrackColor:NothingTheme.div(isDark)),

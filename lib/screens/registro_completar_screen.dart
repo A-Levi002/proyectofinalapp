@@ -8,6 +8,7 @@ import '../utils/helpers.dart';
 class RegistroCompletarScreen extends StatefulWidget {
   final UsuarioModel usuarioPreliminar;
   final String qrDataCompleto;
+  // true = vino del tab ESTUDIANTE → tipo ya fijado
   final bool emailGeneradoAutomaticamente;
 
   const RegistroCompletarScreen({
@@ -18,7 +19,8 @@ class RegistroCompletarScreen extends StatefulWidget {
   });
 
   @override
-  State<RegistroCompletarScreen> createState() => _RegistroCompletarScreenState();
+  State<RegistroCompletarScreen> createState() =>
+      _RegistroCompletarScreenState();
 }
 
 class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
@@ -30,29 +32,33 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
   late TextEditingController _pinController;
   late TextEditingController _pinConfirmController;
 
-  String _tipoUsuarioSeleccionado = 'general';
+  // El tipo viene del carnet escaneado; solo se puede cambiar cuando el
+  // usuario llegó por el tab CI normal (no estudiante, no descuento especial).
+  late String _tipoUsuarioSeleccionado;
   bool _cargando = false;
   bool _mostrarPin = false;
-  
+
+  // Si vino del tab CI normal, puede cambiar entre general / adultomayor / discapacidad
+  // (estudiante se registra desde su propio tab con carnet universitario).
+  bool get _puedeElegirTipo =>
+      !widget.emailGeneradoAutomaticamente &&
+      widget.usuarioPreliminar.tipoUsuario == 'general';
+
   bool get _emailEsSoloLectura =>
-      widget.emailGeneradoAutomaticamente && _tipoUsuarioSeleccionado == 'estudiante';
+      widget.emailGeneradoAutomaticamente &&
+      _tipoUsuarioSeleccionado == 'estudiante';
 
   @override
   void initState() {
     super.initState();
-    _initializeServices();
+    _storageService = StorageService();
+    _supabaseService = SupabaseService(_storageService);
     _inicializarControladores();
   }
 
-  void _initializeServices() {
-    _storageService = StorageService();
-    _supabaseService = SupabaseService(_storageService);
-  }
-
   void _inicializarControladores() {
-    if (widget.emailGeneradoAutomaticamente) {
-      _tipoUsuarioSeleccionado = 'estudiante';
-    }
+    // Tipo viene del carnet; no lo dejamos cambiar si ya es estudiante.
+    _tipoUsuarioSeleccionado = widget.usuarioPreliminar.tipoUsuario;
 
     _emailController = TextEditingController(
       text: widget.usuarioPreliminar.email.isNotEmpty
@@ -60,7 +66,7 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
           : '',
     );
     _telefonoController = TextEditingController();
-    _pinController = TextEditingController();
+    _pinController      = TextEditingController();
     _pinConfirmController = TextEditingController();
   }
 
@@ -81,21 +87,27 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
         _mostrarError('El email es obligatorio');
         return;
       }
-
-      if (!ValidatorsHelper.esEmailUniversitario(emailIngresado) &&
-          _tipoUsuarioSeleccionado == 'estudiante') {
-        _mostrarError('Email debe ser institucional para estudiantes');
+      if (_tipoUsuarioSeleccionado == 'estudiante' &&
+          !ValidatorsHelper.esEmailUniversitario(emailIngresado)) {
+        _mostrarError(
+            'Para estudiantes el email debe ser institucional\n'
+            '(ej: @upds.edu.bo, @umss.edu.bo, @ucb.edu.bo…)');
+        return;
+      }
+      if (!ValidatorsHelper.esEmailValido(emailIngresado)) {
+        _mostrarError('Formato de email inválido');
         return;
       }
     } else {
-      if (emailIngresado.isEmpty || !ValidatorsHelper.esEmailValido(emailIngresado)) {
+      if (emailIngresado.isEmpty ||
+          !ValidatorsHelper.esEmailValido(emailIngresado)) {
         _mostrarError('Email generado inválido. Contacta soporte.');
         return;
       }
     }
 
     if (!ValidatorsHelper.esValidoTelefono(_telefonoController.text)) {
-      _mostrarError('Teléfono inválido');
+      _mostrarError('Teléfono inválido (8 dígitos en Bolivia)');
       return;
     }
 
@@ -126,17 +138,12 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
       if (!mounted) return;
 
       if (resultado['exito'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Registro exitoso! Iniciando sesión...'),
-            backgroundColor: NothingTheme.success,
-          ),
-        );
-
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('¡Registro exitoso! Iniciando sesión...'),
+          backgroundColor: NothingTheme.success,
+        ));
         Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/home');
-          }
+          if (mounted) Navigator.of(context).pushReplacementNamed('/home');
         });
       } else {
         _mostrarError(resultado['mensaje'] ?? 'Error en el registro');
@@ -149,123 +156,138 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
   }
 
   void _mostrarError(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: NothingTheme.error,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(mensaje),
+      backgroundColor: NothingTheme.error,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: NothingTheme.background,
-      appBar: NothingAppBar(title: 'COMPLETAR REGISTRO'),
+      appBar: const NothingAppBar(title: 'COMPLETAR REGISTRO'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
 
-            // Datos del Carnet
-            Text('DATOS DEL CARNET', style: NothingTheme.label),
+            // ── Datos leídos del carnet ──
+            const Text('DATOS DEL CARNET', style: NothingTheme.label),
             const SizedBox(height: 12),
-
-            if (widget.emailGeneradoAutomaticamente)
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: NothingTheme.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: NothingTheme.success.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: NothingTheme.success, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '✓ Email institucional detectado y generado automáticamente',
-                        style: NothingTheme.body.copyWith(fontSize: 12, color: NothingTheme.success),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
             NothingCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildReadOnlyField('CI', widget.usuarioPreliminar.ci),
+                  _readOnlyRow('CI', widget.usuarioPreliminar.ci),
                   const Divider(color: NothingTheme.divider),
-                  _buildReadOnlyField('Nombre', widget.usuarioPreliminar.nombre),
+                  _readOnlyRow('Nombre', widget.usuarioPreliminar.nombre),
                   const Divider(color: NothingTheme.divider),
-                  _buildReadOnlyField('Apellido', widget.usuarioPreliminar.apellido),
+                  _readOnlyRow('Apellido', widget.usuarioPreliminar.apellido),
                   const Divider(color: NothingTheme.divider),
-                  _buildReadOnlyField(
+                  _readOnlyRow(
                     'Nacimiento',
-                    FormateoHelper.formatearFecha(widget.usuarioPreliminar.fechaNacimiento),
+                    FormateoHelper.formatearFecha(
+                        widget.usuarioPreliminar.fechaNacimiento),
+                  ),
+                  const Divider(color: NothingTheme.divider),
+                  // Tipo detectado — badge visual
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Tipo', style: NothingTheme.label),
+                        _TipoBadge(tipo: _tipoUsuarioSeleccionado),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Tipo de Usuario
-            Text('TIPO DE USUARIO', style: NothingTheme.label),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: NothingTheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NothingTheme.divider, width: 0.5),
+            // ── Selector de tipo SOLO para usuarios que vienen del tab CI general ──
+            if (_puedeElegirTipo) ...[
+              const SizedBox(height: 20),
+              const Text('TIPO DE USUARIO', style: NothingTheme.label),
+              const SizedBox(height: 4),
+              Text(
+                'Selecciona si aplicas a algún beneficio especial.',
+                style: NothingTheme.body.copyWith(fontSize: 11,
+                    color: NothingTheme.secondary),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _tipoUsuarioSeleccionado,
-                  isExpanded: true,
-                  dropdownColor: NothingTheme.surface,
-                  style: NothingTheme.body,
-                  items: const [
-                    DropdownMenuItem(value: 'general', child: Text('General')),
-                    DropdownMenuItem(value: 'estudiante', child: Text('Estudiante')),
-                    DropdownMenuItem(value: 'adultomayor', child: Text('Adulto Mayor')),
-                    DropdownMenuItem(value: 'discapacidad', child: Text('Discapacidad')),
-                  ],
-                  onChanged: (value) {
-                    setState(() => _tipoUsuarioSeleccionado = value ?? 'general');
-                  },
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: NothingTheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: NothingTheme.divider, width: 0.5),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _tipoUsuarioSeleccionado,
+                    isExpanded: true,
+                    dropdownColor: NothingTheme.surface,
+                    style: NothingTheme.body,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'general', child: Text('General (sin descuento)')),
+                      DropdownMenuItem(
+                          value: 'adultomayor',
+                          child: Text('Adulto Mayor (30% descuento)')),
+                      DropdownMenuItem(
+                          value: 'discapacidad',
+                          child: Text('Discapacidad (gratuito)')),
+                    ],
+                    onChanged: (value) {
+                      setState(
+                          () => _tipoUsuarioSeleccionado = value ?? 'general');
+                    },
+                  ),
                 ),
               ),
-            ),
+            ],
 
             const SizedBox(height: 24),
 
-            // Email
+            // ── Email ──
             NothingTextField(
               label: 'EMAIL',
-              hint: 'correo@ejemplo.com',
+              hint: _tipoUsuarioSeleccionado == 'estudiante'
+                  ? 'correo@upds.edu.bo'
+                  : 'correo@ejemplo.com',
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               enabled: !_cargando && !_emailEsSoloLectura,
             ),
-            if (_emailEsSoloLectura) ...[
-              const SizedBox(height: 4),
-              Text(
-                '✓ Email institucional generado a partir de tu CI',
-                style: NothingTheme.body.copyWith(fontSize: 11, color: NothingTheme.success),
+            if (_emailEsSoloLectura)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '✓ Email institucional generado desde tu CI',
+                  style: NothingTheme.body
+                      .copyWith(fontSize: 11, color: NothingTheme.success),
+                ),
               ),
-            ],
+            if (!_emailEsSoloLectura &&
+                _tipoUsuarioSeleccionado == 'estudiante')
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '⚠ Usa tu correo institucional universitario',
+                  style: NothingTheme.body.copyWith(
+                      fontSize: 11, color: NothingTheme.accentOrange),
+                ),
+              ),
             const SizedBox(height: 16),
 
-            // Teléfono
+            // ── Teléfono ──
             NothingTextField(
               label: 'TELÉFONO',
               hint: '67123456',
@@ -275,7 +297,7 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
             ),
             const SizedBox(height: 16),
 
-            // PIN
+            // ── PIN ──
             NothingTextField(
               label: 'PIN (4 DÍGITOS)',
               hint: '****',
@@ -287,7 +309,6 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Confirmar PIN
             NothingTextField(
               label: 'CONFIRMAR PIN',
               hint: '****',
@@ -300,14 +321,14 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
 
             CheckboxListTile(
               value: _mostrarPin,
-              onChanged: (value) => setState(() => _mostrarPin = value ?? false),
-              title: Text('Mostrar PIN', style: NothingTheme.body),
+              onChanged: (v) => setState(() => _mostrarPin = v ?? false),
+              title: const Text('Mostrar PIN', style: NothingTheme.body),
               activeColor: NothingTheme.accentGreen,
+              contentPadding: EdgeInsets.zero,
             ),
 
             const SizedBox(height: 24),
 
-            // Botón Registrarse
             NothingButton(
               label: 'CREAR CUENTA',
               onTap: _completarRegistro,
@@ -322,7 +343,7 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
     );
   }
 
-  Widget _buildReadOnlyField(String label, String value) {
+  Widget _readOnlyRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -331,6 +352,38 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
           Text(label, style: NothingTheme.label),
           Text(value, style: NothingTheme.body),
         ],
+      ),
+    );
+  }
+}
+
+// ── Badge visual para tipo de usuario ──
+class _TipoBadge extends StatelessWidget {
+  final String tipo;
+  const _TipoBadge({required this.tipo});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (tipo) {
+      'estudiante'  => ('Estudiante', NothingTheme.accentPurple),
+      'adultomayor' => ('Adulto Mayor', NothingTheme.accentBlue),
+      'discapacidad'=> ('Discapacidad', NothingTheme.accentOrange),
+      _             => ('General', NothingTheme.secondary),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.4), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: color),
       ),
     );
   }

@@ -79,7 +79,7 @@ class NothingTheme {
       cardTheme: CardThemeData(
         color: card_, elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
           side: BorderSide(color:div_,width:0.5),
         ),
       ),

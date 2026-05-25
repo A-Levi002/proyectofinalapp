@@ -161,7 +161,7 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: NothingAppBar(title: 'GENERAR QR'),
+      appBar: const NothingAppBar(title: 'GENERAR QR'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -208,7 +208,7 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
                       size: 18, color: NothingTheme.error),
                   const SizedBox(width: 10),
                   Expanded(child: Text(_errorMessage!,
-                      style: TextStyle(fontFamily: 'monospace',
+                      style: const TextStyle(fontFamily: 'monospace',
                           fontSize: 11, color: NothingTheme.error))),
                 ]),
               ),
@@ -392,7 +392,7 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        i == 0 ? 'YO' : '+${i}',
+                        i == 0 ? 'YO' : '+$i',
                         style: TextStyle(
                           fontFamily: 'monospace', fontSize: 7,
                           fontWeight: FontWeight.w700,
@@ -445,10 +445,10 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
               color: NothingTheme.accentOrange.withOpacity(0.06),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(children: [
-              const Icon(Icons.info_outline,
+            child: const Row(children: [
+              Icon(Icons.info_outline,
                   size: 12, color: NothingTheme.accentOrange),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Expanded(child: Text(
                 'Los acompañantes pagan tarifa general (Bs 2.50 c/u). '
                 'El descuento aplica solo a tu pasaje.',
@@ -516,7 +516,7 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
           const SizedBox(height: 6),
           Text(
             'Ahorras ${FormateoHelper.formatearMoneda(TarifasHelper.tarifaBase - _tarifaPropia)} con tu descuento',
-            style: TextStyle(fontFamily: 'monospace', fontSize: 9,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 9,
                 color: NothingTheme.accentOrange),
           ),
         ],
@@ -536,7 +536,7 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
               const Icon(Icons.warning_amber_outlined,
                   size: 12, color: NothingTheme.error),
               const SizedBox(width: 6),
-              Text('Saldo insuficiente para ${_totalPersonas} persona${_totalPersonas > 1 ? 's' : ''}',
+              Text('Saldo insuficiente para $_totalPersonas persona${_totalPersonas > 1 ? 's' : ''}',
                   style: const TextStyle(fontFamily: 'monospace',
                       fontSize: 9, color: NothingTheme.error)),
             ]),
@@ -648,11 +648,11 @@ class _GenerarQRScreenState extends State<GenerarQRScreen> {
                   color: NothingTheme.accentPurple.withOpacity(0.5),
                   width: 0.5),
             ),
-            child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.refresh, size: 15,
+            child: const Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.refresh, size: 15,
                   color: NothingTheme.accentPurple),
-              const SizedBox(width: 6),
-              const Text('GENERAR NUEVO QR', style: TextStyle(
+              SizedBox(width: 6),
+              Text('GENERAR NUEVO QR', style: TextStyle(
                   fontFamily: 'monospace', fontSize: 11,
                   fontWeight: FontWeight.w700, letterSpacing: 1.5,
                   color: NothingTheme.accentPurple)),

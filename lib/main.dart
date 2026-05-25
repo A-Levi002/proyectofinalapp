@@ -18,6 +18,8 @@ import 'screens/panel_conductor_screen.dart';
 import 'screens/panel_admin_contratos_screen.dart';
 import 'screens/login_conductor_screen.dart';
 import 'screens/ajustes_screen.dart';
+import 'screens/perfil_conductor_screen.dart';
+import 'screens/ajustes_conductor_screen.dart';
 import 'screens/trufis_screen.dart'; // ← NUEVO
 import 'screens/editar_perfil_screen.dart'; // ← NUEVO
 
@@ -94,7 +96,9 @@ class _MyAppState extends State<MyApp> {
         '/ajustes':            (_) => const AjustesScreen(),
         '/login-conductor':    (_) => LoginConductorScreen(supabaseService: _supabaseService, storageService: widget.storageService),
         '/trufis':             (_) => const TrufisScreen(), // ← NUEVO
-        '/editar-perfil':      (_) => EditarPerfilScreen(storageService: widget.storageService), // ← NUEVO
+        '/editar-perfil':      (_) => EditarPerfilScreen(storageService: widget.storageService),
+        '/perfil-conductor':   (_) => const PerfilConductorScreen(),
+        '/ajustes-conductor':  (_) => const AjustesConductorScreen(),
       },
     );
   }

@@ -134,9 +134,9 @@ class _ViajesScreenState extends State<ViajesScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.history, size: 64, color: NothingTheme.secondary),
+                          const Icon(Icons.history, size: 64, color: NothingTheme.secondary),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'NO HAY VIAJES REGISTRADOS',
                             style: NothingTheme.label,
                           ),
@@ -183,9 +183,7 @@ class _ViajesScreenState extends State<ViajesScreen> {
     if (fecha == null && viaje['created_at'] != null) {
       fecha = DateTime.tryParse(viaje['created_at']);
     }
-    if (fecha == null) {
-      fecha = DateTime.now();
-    }
+    fecha ??= DateTime.now();
     
     // Manejo seguro de números
     final montoFinal = (viaje['monto_final'] as num?)?.toDouble() ?? 0.0;
@@ -360,7 +358,7 @@ class _ViajesScreenState extends State<ViajesScreen> {
             // Fecha
             Row(
               children: [
-                Icon(Icons.schedule, size: 14, color: NothingTheme.secondary),
+                const Icon(Icons.schedule, size: 14, color: NothingTheme.secondary),
                 const SizedBox(width: 6),
                 Text(
                   FormateoHelper.formatearFechaHora(fecha),
