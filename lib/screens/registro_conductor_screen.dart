@@ -504,10 +504,10 @@ class _RegistroConductorScreenState extends State<RegistroConductorScreen> {
       );
 
       if (resultado['exito'] == true) {
-        _mostrarExito('✓ Solicitud enviada. Espera aprobación del administrador.');
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context);
-        });
+        await storageService.marcarLanzamiento();
+        await storageService.marcarCuentaRegistrada('conductor');
+        if (mounted) await _mostrarConductorRegistrado();
+        if (mounted) Navigator.of(context).pushReplacementNamed('/onboarding');
       } else {
         String mensaje = resultado['mensaje'] ?? 'Error en el registro';
         if (resultado['codigo'] == 'CI_DUPLICADO') {
@@ -520,6 +520,76 @@ class _RegistroConductorScreenState extends State<RegistroConductorScreen> {
     } finally {
       if (mounted) setState(() { _cargando = false; _leyendoFoto = ''; });
     }
+  }
+
+  Future<void> _mostrarConductorRegistrado() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: NothingTheme.surf(themeNotifier.isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: NothingTheme.accentOrange.withOpacity(0.5), width: 1),
+        ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(
+              color: NothingTheme.accentOrange.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.directions_bus_outlined,
+                color: NothingTheme.accentOrange, size: 42),
+          ),
+          const SizedBox(height: 20),
+          Text('¡SOLICITUD ENVIADA!',
+              style: TextStyle(fontFamily: 'monospace', fontSize: 15,
+                  fontWeight: FontWeight.w900, letterSpacing: 2,
+                  color: NothingTheme.prim(themeNotifier.isDark))),
+          const SizedBox(height: 10),
+          Text(
+            'Tu solicitud como conductor fue enviada.\nEl administrador revisará tus documentos y te notificará cuando tu cuenta esté activa.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'monospace', fontSize: 11,
+                height: 1.6, color: NothingTheme.sec(themeNotifier.isDark)),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: NothingTheme.accentOrange.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(children: [
+              const Icon(Icons.info_outline, size: 14, color: NothingTheme.accentOrange),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Mientras tanto puedes registrarte como pasajero.',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 10,
+                      color: NothingTheme.accentOrange))),
+            ]),
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: NothingTheme.accentOrange,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(child: Text('ENTENDIDO',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 11,
+                      fontWeight: FontWeight.w700, letterSpacing: 2,
+                      color: Colors.black))),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ]),
+      ),
+    );
   }
 
   void _mostrarError(String mensaje) {
@@ -583,9 +653,19 @@ class _RegistroConductorScreenState extends State<RegistroConductorScreen> {
   Widget build(BuildContext context) {
     final dark = themeNotifier.isDark;
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        if (_cargando) return false;
+        Navigator.of(context).pushReplacementNamed('/onboarding');
+        return false;
+      },
+      child: Scaffold(
       backgroundColor: NothingTheme.background,
-      appBar: const NothingAppBar(title: 'REGISTRO CONDUCTOR'),
+      appBar: NothingAppBar(
+        title: 'REGISTRO CONDUCTOR',
+        showBackButton: !_cargando,
+        onBack: () => Navigator.of(context).pushReplacementNamed('/onboarding'),
+      ),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -978,7 +1058,8 @@ class _RegistroConductorScreenState extends State<RegistroConductorScreen> {
             ),
         ],
       ),
-    );
+    ),  // Scaffold
+    );  // WillPopScope
   }
 
   Widget _buildDatePickerField({

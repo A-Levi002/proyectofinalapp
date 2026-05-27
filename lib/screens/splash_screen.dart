@@ -4,127 +4,97 @@ import '../services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   final StorageService storageService;
-
   const SplashScreen({required this.storageService, super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    
-    // Configurar animaciones
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
-    
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-    
-    _animationController.forward();
-    
-    _verificarSesion();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200));
+    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _scale = Tween(begin: 0.85, end: 1.0).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _ctrl.forward();
+    _verificar();
   }
 
   @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
-  Future<void> _verificarSesion() async {
-    await Future.delayed(const Duration(seconds: 2));
-
+  Future<void> _verificar() async {
+    await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
 
-    final tieneToken = widget.storageService.tieneToken();
-
-    if (tieneToken) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else {
-      Navigator.of(context).pushReplacementNamed('/login');
+    // 1. Primera vez → Onboarding
+    if (widget.storageService.esPrimerLanzamiento()) {
+      Navigator.of(context).pushReplacementNamed('/onboarding');
+      return;
     }
+
+    // 2. Tiene sesión → Bienvenida (requiere huella o PIN)
+    if (widget.storageService.tieneToken()) {
+      Navigator.of(context).pushReplacementNamed('/bienvenida');
+      return;
+    }
+
+    // 3. Sin sesión activa → Onboarding (no al login de CI+PIN)
+    Navigator.of(context).pushReplacementNamed('/onboarding');
   }
 
   @override
   Widget build(BuildContext context) {
+    final dark = themeNotifier.isDark;
+    final bg   = NothingTheme.bg(dark);
+    final prim = NothingTheme.prim(dark);
+    final sec  = NothingTheme.sec(dark);
+    final surf = NothingTheme.surf(dark);
+    final div  = NothingTheme.div(dark);
+
     return Scaffold(
-      backgroundColor: NothingTheme.background,
+      backgroundColor: bg,
       body: Center(
         child: FadeTransition(
-          opacity: _fadeAnimation,
+          opacity: _fade,
           child: ScaleTransition(
-            scale: _scaleAnimation,
+            scale: _scale,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo / Icono
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  width: 90, height: 90,
                   decoration: BoxDecoration(
-                    color: NothingTheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: NothingTheme.divider, width: 0.5),
+                    color: surf,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: div, width: 0.5),
+                    boxShadow: [BoxShadow(
+                        color: NothingTheme.accentGreen.withOpacity(0.15),
+                        blurRadius: 30, spreadRadius: 4)],
                   ),
-                  child: const Icon(
-                    Icons.directions_bus,
-                    size: 64,
-                    color: NothingTheme.primary,
-                  ),
+                  child: const Center(child: Icon(
+                      Icons.directions_bus_rounded,
+                      size: 46, color: NothingTheme.accentGreen)),
                 ),
                 const SizedBox(height: 32),
-                // Título
-                const Text(
-                  'TRANSIT',
-                  style: NothingTheme.heading,
-                ),
-                const Text(
-                  'APP',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
+                Text('TRANSIT', style: NothingTheme.heading.copyWith(
+                    color: prim, fontSize: 36, letterSpacing: 4)),
+                Text('APP', style: NothingTheme.heading.copyWith(
                     color: NothingTheme.accentGreen,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Subtítulo
-                Text(
-                  'SISTEMA DE TRANSPORTE INTELIGENTE',
-                  style: NothingTheme.label.copyWith(
-                    letterSpacing: 3,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                // Cargando
-                const SizedBox(
-                  width: 24,
-                  height: 24,
+                    fontSize: 36, letterSpacing: 4)),
+                const SizedBox(height: 56),
+                SizedBox(
+                  width: 20, height: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    color: NothingTheme.secondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'CARGANDO...',
-                  style: NothingTheme.label.copyWith(
-                    color: NothingTheme.secondary,
-                  ),
+                      strokeWidth: 1.5,
+                      color: sec.withOpacity(0.5)),
                 ),
               ],
             ),

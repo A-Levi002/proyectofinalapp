@@ -533,9 +533,19 @@ class _RegistroEscanearScreenState extends State<RegistroEscanearScreen>
     final div  = NothingTheme.div(dark);
     final surf = NothingTheme.surf(dark);
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        if (_cargando) return false;
+        Navigator.of(context).pushReplacementNamed('/onboarding');
+        return false;
+      },
+      child: Scaffold(
       backgroundColor: bg,
-      appBar: NothingAppBar(title: 'CREAR CUENTA', showBackButton: !_cargando),
+      appBar: NothingAppBar(
+        title: 'CREAR CUENTA',
+        showBackButton: !_cargando,
+        onBack: () => Navigator.of(context).pushReplacementNamed('/onboarding'),
+      ),
       body: Column(children: [
         // Tab bar
         Container(
@@ -631,6 +641,7 @@ class _RegistroEscanearScreenState extends State<RegistroEscanearScreen>
           ),
         ),
       ]),
+      ),
     );
   }
 

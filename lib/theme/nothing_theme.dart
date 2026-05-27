@@ -212,7 +212,8 @@ class NothingAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
   final bool showBackButton;
-  const NothingAppBar({super.key,required this.title,this.actions,this.showBackButton=true});
+  final VoidCallback? onBack; // ← nuevo: callback personalizado para atrás
+  const NothingAppBar({super.key,required this.title,this.actions,this.showBackButton=true,this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +222,10 @@ class NothingAppBar extends StatelessWidget implements PreferredSizeWidget {
       title:Text(title),centerTitle:true,backgroundColor:Colors.transparent,
       bottom:PreferredSize(preferredSize:const Size.fromHeight(0.5),
         child:Divider(height:0.5,thickness:0.5,color:NothingTheme.div(dark))),
-      leading:showBackButton?IconButton(icon:const Icon(Icons.arrow_back_ios,size:16),onPressed:()=>Navigator.pop(context)):null,
+      leading:showBackButton?IconButton(
+        icon:const Icon(Icons.arrow_back_ios,size:16),
+        onPressed: onBack ?? () => Navigator.maybePop(context),
+      ):null,
       actions:actions,
     );
   }

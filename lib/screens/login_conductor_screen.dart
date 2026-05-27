@@ -63,6 +63,9 @@ class _LoginConductorScreenState extends State<LoginConductorScreen> {
           await widget.storageService.guardarObjeto('conductor_data', resultado['conductor']);
         }
         await widget.storageService.guardar('tipo_usuario', 'conductor');
+        await widget.storageService.guardarTipoSesion('conductor');
+        await widget.storageService.marcarCuentaRegistrada('conductor');
+        await widget.storageService.desbloquearApp();
         
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/panel-conductor');
@@ -102,7 +105,7 @@ class _LoginConductorScreenState extends State<LoginConductorScreen> {
               // Botón de retroceso
               IconButton(
                 icon: const Icon(Icons.arrow_back_ios, size: 18),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.of(context).pushReplacementNamed('/onboarding'),
                 padding: EdgeInsets.zero,
                 alignment: Alignment.centerLeft,
               ),
@@ -170,13 +173,14 @@ class _LoginConductorScreenState extends State<LoginConductorScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Botón Registro Conductor
-              NothingButton(
-                label: 'SOLICITAR REGISTRO',
-                onTap: () => Navigator.of(context).pushNamed('/registro-conductor'),
-                filled: false,
-                icon: Icons.person_add,
-              ),
+              // Mostrar SOLICITAR REGISTRO solo si no tiene cuenta de conductor
+              if (!widget.storageService.tieneCuenta('conductor'))
+                NothingButton(
+                  label: 'SOLICITAR REGISTRO',
+                  onTap: () => Navigator.of(context).pushNamed('/registro-conductor'),
+                  filled: false,
+                  icon: Icons.person_add,
+                ),
               const SizedBox(height: 24),
 
               // Separador

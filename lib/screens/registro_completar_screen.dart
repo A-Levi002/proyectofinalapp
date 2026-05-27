@@ -138,13 +138,14 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
       if (!mounted) return;
 
       if (resultado['exito'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('¡Registro exitoso! Iniciando sesión...'),
-          backgroundColor: NothingTheme.success,
-        ));
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.of(context).pushReplacementNamed('/home');
-        });
+        // Marcar lanzamiento y cuenta registrada
+        await _storageService.marcarLanzamiento();
+        await _storageService.marcarCuentaRegistrada('usuario');
+        await _storageService.guardarTipoSesion('usuario');
+
+        // Mostrar confirmación antes de entrar
+        if (mounted) await _mostrarCuentaCreada();
+        if (mounted) Navigator.of(context).pushReplacementNamed('/bienvenida');
       } else {
         _mostrarError(resultado['mensaje'] ?? 'Error en el registro');
       }
@@ -163,11 +164,66 @@ class _RegistroCompletarScreenState extends State<RegistroCompletarScreen> {
     ));
   }
 
+  Future<void> _mostrarCuentaCreada() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: NothingTheme.surf(themeNotifier.isDark),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: NothingTheme.accentGreen.withOpacity(0.5), width: 1),
+        ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(
+              color: NothingTheme.accentGreen.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_circle_outline,
+                color: NothingTheme.accentGreen, size: 44),
+          ),
+          const SizedBox(height: 20),
+          Text('¡CUENTA CREADA!',
+              style: TextStyle(fontFamily: 'monospace', fontSize: 16,
+                  fontWeight: FontWeight.w900, letterSpacing: 2,
+                  color: NothingTheme.prim(themeNotifier.isDark))),
+          const SizedBox(height: 10),
+          Text(
+            'Tu cuenta de pasajero fue registrada exitosamente.\nYa puedes ingresar con tu PIN o huella.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'monospace', fontSize: 11,
+                height: 1.6, color: NothingTheme.sec(themeNotifier.isDark)),
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: NothingTheme.accentGreen,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(child: Text('INGRESAR AHORA',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 11,
+                      fontWeight: FontWeight.w700, letterSpacing: 2,
+                      color: Colors.black))),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: NothingTheme.background,
-      appBar: const NothingAppBar(title: 'COMPLETAR REGISTRO'),
+      appBar: NothingAppBar(title: 'COMPLETAR REGISTRO', onBack: () => Navigator.of(context).pushReplacementNamed('/onboarding')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

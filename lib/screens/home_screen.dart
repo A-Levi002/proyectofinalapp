@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 // Acciones rápidas
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                  _QuickBtn(icon: Icons.qr_code_2_outlined,  label: 'QR',
+                  _QuickBtn(icon: Icons.qr_code_scanner,  label: 'PAGAR',
                       isDark: dark,
                       onTap: () => Navigator.pushNamed(context, '/generar-qr')),
                   _QuickBtn(icon: Icons.credit_card_outlined, label: 'RECARGAR',

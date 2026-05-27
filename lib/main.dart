@@ -6,6 +6,8 @@ import 'services/storage_service.dart';
 import 'services/supabase_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/bienvenida_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/registro_escanear_screen.dart';
 import 'screens/generar_qr_screen.dart';
@@ -53,20 +55,43 @@ class MyApp extends StatefulWidget {
   @override State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late SupabaseService _supabaseService;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
     _supabaseService = SupabaseService(widget.storageService);
     themeNotifier.addListener(_rebuild);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     themeNotifier.removeListener(_rebuild);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Bloquea la app cuando va al fondo y redirige a bienvenida al volver
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Solo bloquear en paused (app realmente en segundo plano),
+    // NO en inactive — ese estado se activa con la cámara/escáner y causa bucles.
+    if (state == AppLifecycleState.paused) {
+      if (widget.storageService.tieneToken()) {
+        widget.storageService.bloquearApp();
+      }
+    }
+    if (state == AppLifecycleState.resumed) {
+      if (widget.storageService.estaAppBloqueada() &&
+          widget.storageService.tieneToken()) {
+        widget.storageService.desbloquearApp(); // evitar bucle si ya está en bienvenida
+        _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            '/bienvenida', (route) => false);
+      }
+    }
   }
 
   void _rebuild() => setState(() {});
@@ -74,6 +99,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'TransitApp',
       debugShowCheckedModeBanner: false,
       theme: NothingTheme.themeLight,
@@ -82,6 +108,8 @@ class _MyAppState extends State<MyApp> {
       home: SplashScreen(storageService: widget.storageService),
       routes: {
         '/splash':             (_) => SplashScreen(storageService: widget.storageService),
+        '/onboarding':         (_) => OnboardingScreen(storageService: widget.storageService),
+        '/bienvenida':         (_) => BienvenidaScreen(supabaseService: _supabaseService, storageService: widget.storageService),
         '/login':              (_) => LoginScreen(supabaseService: _supabaseService, storageService: widget.storageService),
         '/home':               (_) => HomeScreen(storageService: widget.storageService),
         '/registro-escanear':  (_) => const RegistroEscanearScreen(),

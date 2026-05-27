@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../services/storage_service.dart';
@@ -769,120 +770,107 @@ class _PanelConductorScreenState extends State<PanelConductorScreen>
   //  TAB 3 — QR
   // ─────────────────────────────────────────────
   Widget _buildTabQR(bool dark, Color bg, Color prim, Color sec, Color div) {
-    if (_escaneando && _qrCtrl != null) {
-      return Stack(children: [
-        MobileScanner(
-          controller: _qrCtrl!,
-          onDetect: (capture) {
-            final barcodes = capture.barcodes;
-            if (barcodes.isEmpty || _procesandoQR) return;
-            final val = barcodes.first.rawValue;
-            if (val != null) _procesarQR(val);
-          },
-        ),
+    final conductorId = conductor?['id'] as String?;
+    final surf = NothingTheme.surf(dark);
 
-        // Marco de escaneo
-        Center(child: Container(
-          width: 250, height: 250,
-          decoration: BoxDecoration(
-            border: Border.all(color: NothingTheme.accentGreen, width: 2),
-            borderRadius: BorderRadius.circular(16),
-          ),
-        )),
+    // QR estático basado en el ID del conductor
+    final qrData = conductorId != null ? 'conductor_$conductorId' : null;
 
-        // Overlay info
-        Positioned(top: 40, left: 0, right: 0,
-          child: Center(child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _procesandoQR ? 'Procesando…' : 'Apunta al QR del pasajero',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 11,
-                  color: Colors.white),
-            ),
-          )),
-        ),
-
-        // Botón cerrar
-        Positioned(bottom: 40, left: 0, right: 0,
-          child: Center(child: GestureDetector(
-            onTap: _cerrarScanner,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: NothingTheme.error,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text('CANCELAR', style: TextStyle(fontFamily: 'monospace',
-                  fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
-            ),
-          )),
-        ),
-
-        if (_procesandoQR)
-          Container(color: Colors.black.withOpacity(0.4),
-              child: const Center(child: CircularProgressIndicator(
-                  color: NothingTheme.accentGreen))),
-      ]);
-    }
-
-    // Pantalla principal QR
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
-        // Ícono grande
-        Container(
-          width: 120, height: 120,
-          decoration: BoxDecoration(
-            color: NothingTheme.accentGreen.withOpacity(0.08),
-            shape: BoxShape.circle,
-            border: Border.all(
-                color: NothingTheme.accentGreen.withOpacity(0.4), width: 0.5),
-          ),
-          child: const Icon(Icons.qr_code_scanner,
-              size: 56, color: NothingTheme.accentGreen),
-        ),
-        const SizedBox(height: 20),
-
-        Text('VALIDAR PASAJERO', style: TextStyle(fontFamily: 'monospace',
+        // Header
+        Text('MI CÓDIGO QR', style: TextStyle(fontFamily: 'monospace',
             fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 3, color: prim)),
-        const SizedBox(height: 8),
-        Text('Escanea el QR del pasajero para registrar el viaje y tu comisión.',
+        const SizedBox(height: 6),
+        Text('Los pasajeros escanean este QR para pagar su viaje.',
             style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: sec),
             textAlign: TextAlign.center),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // Botón principal
-        GestureDetector(
-          onTap: _abrirScanner,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20),
+        // QR estático
+        if (qrData != null) ...[
+          Container(
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: NothingTheme.accentGreen,
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(
+                color: NothingTheme.accentGreen.withOpacity(0.25),
+                blurRadius: 30, spreadRadius: 4,
+              )],
             ),
-            child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.camera_alt, color: Colors.black, size: 22),
-              SizedBox(width: 12),
-              Text('ABRIR ESCÁNER', style: TextStyle(fontFamily: 'monospace',
-                  fontSize: 13, fontWeight: FontWeight.w700,
-                  letterSpacing: 2, color: Colors.black)),
+            child: Column(children: [
+              QrImageView(
+                data: qrData,
+                version: QrVersions.auto,
+                size: 220,
+                backgroundColor: Colors.white,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: NothingTheme.accentGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  conductor?['nombre'] != null
+                      ? '${conductor!['nombre']} ${conductor!['apellido'] ?? ''}'.trim().toUpperCase()
+                      : 'CONDUCTOR',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 10,
+                      fontWeight: FontWeight.w700, letterSpacing: 1.5,
+                      color: NothingTheme.accentGreen),
+                ),
+              ),
             ]),
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
+
+          // Instrucción
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: surf,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: div, width: 0.5),
+            ),
+            child: Row(children: [
+              const Icon(Icons.info_outline, size: 18, color: NothingTheme.accentBlue),
+              const SizedBox(width: 12),
+              Expanded(child: Text(
+                'Este QR es permanente. El pasajero lo escanea con la app y el cobro se procesa automáticamente.',
+                style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: sec),
+              )),
+            ]),
+          ),
+          const SizedBox(height: 20),
+        ] else ...[
+          // Sin conductor cargado
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: surf,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: div, width: 0.5),
+            ),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.qr_code_2_outlined, size: 56, color: sec.withOpacity(0.3)),
+              const SizedBox(height: 12),
+              Text('Cargando QR...', style: TextStyle(
+                  fontFamily: 'monospace', fontSize: 11, color: sec)),
+            ]),
+          ),
+          const SizedBox(height: 20),
+        ],
 
         // Info tarifa
         NothingCard(
           child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('TARIFAS VIGENTES', style: TextStyle(fontFamily: 'monospace',
+              Text('TARIFAS QUE COBRARÁS', style: TextStyle(fontFamily: 'monospace',
                   fontSize: 9, fontWeight: FontWeight.w700,
                   letterSpacing: 2.5, color: sec)),
             ]),
@@ -895,7 +883,7 @@ class _PanelConductorScreenState extends State<PanelConductorScreen>
         ),
         const SizedBox(height: 20),
 
-        // Última validación
+        // Último pago recibido
         if (_resultadoQR != null)
           Container(
             padding: const EdgeInsets.all(14),
@@ -908,7 +896,7 @@ class _PanelConductorScreenState extends State<PanelConductorScreen>
               const Icon(Icons.check_circle_outline,
                   color: NothingTheme.accentGreen, size: 18),
               const SizedBox(width: 10),
-              Expanded(child: Text('Último escaneo:\n$_resultadoQR',
+              Expanded(child: Text('Último pago recibido:\n$_resultadoQR',
                   style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: prim))),
             ]),
           ),

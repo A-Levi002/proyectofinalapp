@@ -73,7 +73,8 @@ class SupabaseService {
       }).select();
 
       if (response.isNotEmpty) {
-        await _storageService.guardarToken(authResponse.session?.accessToken ?? '');
+        final tkn = authResponse.session?.accessToken ?? '';
+        if (tkn.isNotEmpty) await _storageService.guardarToken(tkn);
         await _storageService.guardarUsuario(UsuarioModel.fromJson(response.first));
         
         return {
@@ -167,13 +168,18 @@ class SupabaseService {
       await limpiarIntentosFallidos(ci);
       await registrarAuditLog(accion: 'LOGIN_EXITOSO', usuarioCi: ci, descripcion: 'Login correcto');
       
-      await _storageService.guardarToken(authResponse.session!.accessToken);
-      await _storageService.guardarUsuario(UsuarioModel.fromJson(userResponse));
+      final token = authResponse.session!.accessToken;
+      if (token.isNotEmpty) {
+        await _storageService.guardarToken(token);
+      }
+      final usuarioModel = UsuarioModel.fromJson(userResponse);
+      await _storageService.guardarUsuario(usuarioModel);
+      await _storageService.guardarTipoSesion('usuario');
 
       return {
         'exito': true,
-        'usuario': UsuarioModel.fromJson(userResponse),
-        'token': authResponse.session!.accessToken,
+        'usuario': usuarioModel,
+        'token': token,
       };
     } catch (e) {
       print('❌ Error en login: $e');
@@ -1217,6 +1223,131 @@ class SupabaseService {
       } catch (e) {
         print('Error descontando saldo: $e');
       }
+    }
+  }
+
+  // ============ PROCESAR PAGO QR CONDUCTOR (flujo invertido) ============
+  // El usuario escanea el QR estático del conductor.
+  // qrData = 'conductor_<conductor_id>'
+  Future<Map<String, dynamic>> procesarPagoQRConductor({
+    required String qrData,
+    int cantidadPersonas = 1,
+    double montoExtra = 0.0,  // tarifa acompañantes
+  }) async {
+    try {
+      // 1. Verificar que el QR sea de un conductor válido
+      if (!qrData.startsWith('conductor_')) {
+        return {'exito': false, 'mensaje': 'QR inválido: no es un QR de conductor'};
+      }
+      final conductorId = qrData.replaceFirst('conductor_', '');
+
+      // 2. Obtener conductor
+      final conductor = await _supabase
+          .from('conductores')
+          .select()
+          .eq('id', conductorId)
+          .maybeSingle();
+
+      if (conductor == null) {
+        return {'exito': false, 'mensaje': 'Conductor no encontrado'};
+      }
+
+      // 3. Obtener usuario autenticado
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        return {'exito': false, 'mensaje': 'Usuario no autenticado'};
+      }
+      final usuario = await _supabase
+          .from('usuarios')
+          .select()
+          .eq('email', user.email!)
+          .maybeSingle();
+      if (usuario == null) {
+        return {'exito': false, 'mensaje': 'Usuario no encontrado'};
+      }
+
+      final ci          = usuario['ci'] as String;
+      final tipoUsuario = usuario['tipo_usuario'] as String? ?? 'general';
+      final saldoStr    = usuario['saldo']?.toString() ?? '0';
+      final saldo       = double.tryParse(saldoStr) ?? 0.0;
+
+      // 4. Calcular tarifa
+      final tarifaPropia = TarifasHelper.calcularTarifa(tipoUsuario: tipoUsuario);
+      final tarifaTotal  = tarifaPropia + montoExtra;
+
+      if (saldo < tarifaTotal) {
+        return {
+          'exito': false,
+          'mensaje': 'Saldo insuficiente. Necesitas Bs ${tarifaTotal.toStringAsFixed(2)} '
+              'y tienes Bs ${saldo.toStringAsFixed(2)}.',
+        };
+      }
+
+      // 5. Descontar saldo del usuario
+      final nuevoSaldo = saldo - tarifaTotal;
+      await actualizarSaldo(ci, nuevoSaldo);
+
+      // 6. Registrar viaje
+      final viaje = await _supabase.from('viajes').insert({
+        'usuario_ci':        ci,
+        'monto_original':    2.50 * cantidadPersonas,
+        'monto_descuento':   (2.50 * cantidadPersonas) - tarifaTotal,
+        'monto_final':       tarifaTotal,
+        'tipo_usuario':      tipoUsuario,
+        'cantidad_personas': cantidadPersonas,
+        'estado':            'validado',
+        'qr_escaneado':      true,
+        'fecha_validacion':  DateTime.now().toIso8601String(),
+      }).select('id').single();
+
+      final viajeId = viaje['id'] as String;
+
+      // 7. Calcular comisión del conductor
+      final contrato = await _supabase
+          .from('contratos_conductores')
+          .select('comision_porcentaje')
+          .eq('conductor_id', conductorId)
+          .maybeSingle();
+
+      final comisionPorc = double.tryParse(
+          contrato?['comision_porcentaje']?.toString() ?? '10') ?? 10.0;
+      final comisionCond = tarifaTotal * (comisionPorc / 100);
+      final comisionEmp  = tarifaTotal - comisionCond;
+
+      // 8. Registrar pago al conductor
+      await _supabase.from('pagos_conductores').insert({
+        'conductor_id':        conductorId,
+        'usuario_pasajero_ci': ci,
+        'viaje_id':            viajeId,
+        'monto_bruto':         tarifaTotal,
+        'comision_conductor':  comisionCond,
+        'comision_empresa':    comisionEmp,
+        'estado':              'pendiente',
+      });
+
+      // 9. Actualizar saldo comisiones conductor
+      final saldoCondStr = conductor['saldo_comisiones']?.toString() ?? '0';
+      final saldoCond    = double.tryParse(saldoCondStr) ?? 0.0;
+      await _supabase.from('conductores').update({
+        'saldo_comisiones': saldoCond + comisionCond,
+      }).eq('id', conductorId);
+
+      await registrarAuditLog(
+        accion:      'PAGO_QR_CONDUCTOR',
+        usuarioCi:   ci,
+        descripcion: 'Conductor: ${conductor['nombre']} | Monto: Bs $tarifaTotal | Personas: $cantidadPersonas',
+      );
+
+      return {
+        'exito':             true,
+        'conductorNombre':   '${conductor['nombre'] ?? ''} ${conductor['apellido'] ?? ''}'.trim(),
+        'tarifaAplicada':    tarifaTotal,
+        'saldoRestante':     nuevoSaldo,
+        'comisionConductor': comisionCond,
+        'cantidadPersonas':  cantidadPersonas,
+      };
+    } catch (e) {
+      return {'exito': false, 'mensaje': 'Error: $e'};
     }
   }
 }
